@@ -9,6 +9,8 @@ on:
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 jobs:
   build:
@@ -41,6 +43,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
+          registry-url: https://registry.npmjs.org
+          token: ${{ secrets.NPM_TOKEN }}
           cache: 'pnpm'
 
       # ---------- Setup PNPM and install dependencies
@@ -62,24 +66,35 @@ jobs:
         shell: bash
 
       # ---------- Tag this version and export it as env variable
-      - name: Semantic version
-        run: npx semantic-release
-        shell: bash
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v3
+        with:
+          semantic_version: 19.0.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # ---------- Run all unit & integration tests with coverage
       - name: Test and coverage
-        run: pnpm test --coverage
+        run: pnpm test
         shell: bash
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # ---------- Build
       - name: Build
-        run: pnpm build:prod
+        run: pnpm build
         shell: bash
 
-
+      # ---------- Publish to NPM
+      - name: Config npm
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to NPM
+        run: pnpm publish --no-git-checks --access=public
+        
