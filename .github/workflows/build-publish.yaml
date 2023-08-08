@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 env:
@@ -42,42 +44,42 @@ jobs:
           cache: 'pnpm'
 
       # ---------- Setup PNPM and install dependencies
-      # - name: Get pnpm store directory
-      #   id: pnpm-cache
-      #   run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-      #   shell: bash
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
 
-      # - name: Setup pnpm cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-      #     key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-pnpm-store-
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
-      # - name: Install Dependencies
-      #   run: pnpm install --no-frozen-lockfile
-      #   shell: bash
+      - name: Install Dependencies
+        run: pnpm install --no-frozen-lockfile
+        shell: bash
 
-      # # ---------- Tag this version and export it as env variable
-      # - name: Semantic version
-      #   run: npx semantic-release
-      #   shell: bash
+      # ---------- Tag this version and export it as env variable
+      - name: Semantic version
+        run: npx semantic-release
+        shell: bash
 
-      # # ---------- Run all unit & integration tests with coverage
-      # - name: Test and coverage
-      #   run: pnpm test:unit --coverage
-      #   shell: bash
+      # ---------- Run all unit & integration tests with coverage
+      - name: Test and coverage
+        run: pnpm test --coverage
+        shell: bash
 
-      # - name: SonarCloud Scan
-      #   uses: SonarSource/sonarcloud-github-action@master
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
 
-      # # ---------- Build
-      # - name: Build
-      #   run: pnpm build:prod
-      #   shell: bash
+      # ---------- Build
+      - name: Build
+        run: pnpm build:prod
+        shell: bash
 
 
